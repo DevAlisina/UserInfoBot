@@ -31,33 +31,24 @@ $update = json_decode(file_get_contents('php://input'), true);
 
 // Check if a message was received AND if that message was forwarded.
 // We're specifically looking for the 'forward_from' field to identify the original sender.
-if (isset($update['message']) && isset($update['message']['forward_from'])) {
-    $message = $update['message']; // Assign the message array for easier access.
-    $chatId = $message['chat']['id']; // Get the chat ID of the user who sent the message.
-                                      // This is where we'll send our reply!
-    $forwardFrom = $message['forward_from']; // Extract the 'forward_from' array, which contains
-                                             // all the details about the original sender.
+if (isset($update['message']['forward_from_chat'])) {
+    $forwardChat = $update['message']['forward_from_chat'];
 
-    // Extract the original sender's information from the 'forward_from' array.
-    // We try to get as much detail as possible!
-    $senderId = $forwardFrom['id']; // The unique numeric ID of the original sender.
-    $firstName = isset($forwardFrom['first_name']) ? $forwardFrom['first_name'] : 'Unknown Name'; // Their first name.
-                                                                                                 // If not set, default to 'Unknown Name'.
-    $lastName = isset($forwardFrom['last_name']) ? $forwardFrom['last_name'] : ''; // Their last name. Can be empty.
-    $username = isset($forwardFrom['username']) ? '@' . $forwardFrom['username'] : 'Unknown Username'; // Their username,
-                                                                                                      // prepended with '@'.
+    $chatId = $update['message']['chat']['id'];
+    $chatType = $forwardChat['type']; // channel, group, supergroup, etc
+    $chatTitle = $forwardChat['title'] ?? 'No title';
+    $chatUsername = isset($forwardChat['username']) ? '@' . $forwardChat['username'] : 'No username';
+    $chatNumericId = $forwardChat['id'];
 
-    // Build the response message that we'll send back to the user.
-    // We make it clear and include all the juicy details!
-    $responseText = "Your message was forwarded from a user!\n";
-    $responseText .= "✨ Original Sender Information: ✨\n";
-    $responseText .= "🔢 Numeric ID: " . $senderId . "\n";
-    $responseText .= "👤 Name: " . $firstName . " " . $lastName . "\n";
-    $responseText .= "🆔 Username: " . $username . "\n";
+    $text = "📥 Message was forwarded from a $chatType:\n\n";
+    $text .= "🆔 Numeric ID: <code>$chatNumericId</code>\n";
+    $text .= "📛 Title: $chatTitle\n";
+    $text .= "🔗 Username: $chatUsername\n";
+    $text .= "📂 Type: $chatType";
 
-    // Send the constructed response message back to the user using the sendMessage function.
-    sendMessage($chatId, $responseText);
-} else {
+    sendMessage($chatId, $text);
+}
+ else {
     // If the message is NOT forwarded, or if essential information is missing,
     // we send a friendly greeting and instructions.
     $chatId = isset($update['message']['chat']['id']) ? $update['message']['chat']['id'] : null; // Get chat ID if message exists.
@@ -94,7 +85,3 @@ function sendMessage($chatId, $text) {
         error_log("Error sending message to Telegram. URL: " . $url);
     }
 }
-
-?>
-
-
