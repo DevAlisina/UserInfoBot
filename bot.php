@@ -32,30 +32,46 @@ $update = json_decode(file_get_contents('php://input'), true);
 // Check if a message was received AND if that message was forwarded.
 // We're specifically looking for the 'forward_from' field to identify the original sender.
 if (isset($update['message']['forward_from_chat'])) {
+    // 📡 فوروارد از کانال یا گروه (public)
     $forwardChat = $update['message']['forward_from_chat'];
-
     $chatId = $update['message']['chat']['id'];
-    $chatType = $forwardChat['type']; // channel, group, supergroup, etc
+
+    $chatType = $forwardChat['type']; // channel, supergroup
     $chatTitle = $forwardChat['title'] ?? 'No title';
     $chatUsername = isset($forwardChat['username']) ? '@' . $forwardChat['username'] : 'No username';
     $chatNumericId = $forwardChat['id'];
 
-    $text = "📥 Message was forwarded from a $chatType:\n\n";
-    $text .= "🆔 Numeric ID: <code>$chatNumericId</code>\n";
-    $text .= "📛 Title: $chatTitle\n";
-    $text .= "🔗 Username: $chatUsername\n";
-    $text .= "📂 Type: $chatType";
+    $text = "📥 Message was forwarded from a <b>$chatType</b>:\n\n";
+    $text .= "🆔 <b>ID:</b> <code>$chatNumericId</code>\n";
+    $text .= "📛 <b>Title:</b> $chatTitle\n";
+    $text .= "🔗 <b>Username:</b> $chatUsername\n";
+    $text .= "📂 <b>Type:</b> $chatType";
 
     sendMessage($chatId, $text);
+
+} elseif (isset($update['message']['forward_from'])) {
+    // 👤 فوروارد از یک کاربر (شخصی)
+    $forwardUser = $update['message']['forward_from'];
+    $chatId = $update['message']['chat']['id'];
+
+    $firstName = $forwardUser['first_name'] ?? '';
+    $lastName = $forwardUser['last_name'] ?? '';
+    $username = isset($forwardUser['username']) ? '@' . $forwardUser['username'] : 'No username';
+    $userId = $forwardUser['id'];
+
+    $text = "👤 Message was forwarded from a user:\n\n";
+    $text .= "🆔 <b>User ID:</b> <code>$userId</code>\n";
+    $text .= "👥 <b>Name:</b> $firstName $lastName\n";
+    $text .= "🔗 <b>Username:</b> $username";
+
+    sendMessage($chatId, $text);
+
+} else {
+    // ⛔ فوروارد نشده یا اطلاعات قابل بازیابی نیست (مثلاً گروه خصوصی)
+    $chatId = $update['message']['chat']['id'];
+    sendMessage($chatId, "⚠️ Sorry! I couldn't detect the original sender.\nMaybe the message was forwarded from a <b>private group</b> or a <b>hidden user</b>.\n\nTry forwarding from a public channel or user!");
 }
- else {
-    // If the message is NOT forwarded, or if essential information is missing,
-    // we send a friendly greeting and instructions.
-    $chatId = isset($update['message']['chat']['id']) ? $update['message']['chat']['id'] : null; // Get chat ID if message exists.
-    if ($chatId) { // Only send a message if we have a valid chat ID.
-        sendMessage($chatId, "Hello! Please forward a message to me, and I will show you the original sender's information. It's so exciting!");
-    }
-}
+
 
 /**
  * A helper function to send messages back to the user.
