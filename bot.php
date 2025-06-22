@@ -16,7 +16,7 @@
 
 // Define your bot token here. This is absolutely critical for your bot to work!
 // You get this token from BotFather when you create your bot.
-$botToken = '7625615977:AAEK6Vniemlt_WZU5-QXPHClRfrtqGNvtqM'; // <<< IMPORTANT: Replace 'YOUR_BOT_TOKEN' with your actual bot token!
+$botToken = getenv('BOT_TOKEN'); // <<< IMPORTANT: Replace 'YOUR_BOT_TOKEN' with your actual bot token!
 
 // Construct the base URL for the Telegram Bot API. All requests will go through here.
 $telegramApiUrl = 'https://api.telegram.org/bot' . $botToken . '/';
